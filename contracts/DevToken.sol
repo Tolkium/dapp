@@ -116,7 +116,7 @@ contract DevToken is ERC20, Ownable {
         //emit CalculatedReward(startDate);
         uint256 endDate = stakeStartDate + 365 days;
         //emit CalculatedReward1(startDate, endDate);
-        uint256 daysStaked = (endDate - startDate) / 86400;
+        uint256 daysStaked = (endDate - startDate + 86399) / 86400;
         //emit CalculatedReward2(startDate, endDate, daysStaked);
         uint256 reward = (_current_stake.amount * daysStaked * 11111111) / (365 * 10 ** 8);
         //emit CalculatedReward3(startDate, endDate, daysStaked, reward);
