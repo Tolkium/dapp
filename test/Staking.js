@@ -6,17 +6,20 @@ const truffleAssert = require('truffle-assertions');
 const BN = require('bn.js');
 
 // Start a test series named DevToken, it will use 10 test accounts
-contract("DevToken", async accounts => {
+contract("Staking", async accounts => {
 
     it("Staking 100x2", async () => {
         devToken = await DevToken.deployed();
+        let owner = accounts[0];
+
+        await devToken.setStakeStartDate(Math.floor(Date.now() / 1000) + 10, {from: owner});
+        await helper.advanceTimeAndBlock(3600);
 
         // Stake 100 is used to stake 100 tokens twice and see that stake is added correctly and money burned
-        let owner = accounts[0];
         // Set owner, user and a stake_amount
-        let stake_amount = new BN('100000000000000000000000000', 10);
+        let stake_amount = new BN('1000', 10);
         // Add som tokens on account 1 asweel
-        //await devToken.transfer(accounts[1], stake_amount, { from: owner });
+        await devToken.transfer(accounts[1], stake_amount, { from: owner });
         // Get init balance of user
         let balance = await devToken.balanceOf(owner)
         console.log("Balance before stake: " + balance.toString());
@@ -31,25 +34,40 @@ contract("DevToken", async accounts => {
             "Staked",
             (ev) => {
                 // In here we can do our assertion on the ev variable (its the event and will contain the values we emitted)
-                assert.equal(ev.amount, stake_amount, "Stake amount in event was not correct");
+                assert.equal(ev.amount, stake_amount.toString(), "Stake amount in event was not correct");
                 assert.equal(ev.index, 1, "Stake index was not correct");
                 return true;
             },
             "Stake event should have triggered");
 
-        // stakeID = await devToken.stake(stake_amount, { from: owner });
-        // // Assert on the emittedevent using truffleassert
-        // // This will capture the event and inside the event callback we can use assert on the values returned
-        // truffleAssert.eventEmitted(
-        //     stakeID,
-        //     "Staked",
-        //     (ev) => {
-        //         // In here we can do our assertion on the ev variable (its the event and will contain the values we emitted)
-        //         assert.equal(ev.amount, stake_amount, "Stake amount in event was not correct");
-        //         assert.equal(ev.index, 1, "Stake index was not correct");
-        //         return true;
-        //     },
-        //     "Stake event should have triggered");
+        // Stake the amount, notice the FROM parameter which specifes what the msg.sender address will be
+        stakeID = await devToken.stake(stake_amount, {from: owner});
+        // Assert on the emittedevent using truffleassert
+        // This will capture the event and inside the event callback we can use assert on the values returned
+        truffleAssert.eventEmitted(
+            stakeID,
+            "Staked",
+            (ev) => {
+                // In here we can do our assertion on the ev variable (its the event and will contain the values we emitted)
+                assert.equal(ev.amount, stake_amount.toString(), "Stake amount in event was not correct");
+                assert.equal(ev.index, 1, "Stake index was not correct");
+                return true;
+            },
+            "Stake event should have triggered");
+
+        stakeID = await devToken.stake(100, { from: accounts[1] });
+        // Assert on the emittedevent using truffleassert
+        // This will capture the event and inside the event callback we can use assert on the values returned
+        truffleAssert.eventEmitted(
+            stakeID,
+            "Staked",
+            (ev) => {
+                // In here we can do our assertion on the ev variable (its the event and will contain the values we emitted)
+                assert.equal(ev.amount, 100, "Stake amount in event was not correct");
+                assert.equal(ev.index, 2, "Stake index was not correct");
+                return true;
+            },
+            "Stake event should have triggered");
 
     });
 
@@ -59,35 +77,41 @@ contract("DevToken", async accounts => {
         devToken = await DevToken.deployed();
 
         try{
+            await devToken.stake(1000000000, { from: accounts[1]});
+        }catch(error){
+            assert.equal(error.reason, "Cannot stake more than you own");
+        }
+
+        try{
             await devToken.stake(1000000000, { from: accounts[2]});
         }catch(error){
             assert.equal(error.reason, "Cannot stake more than you own");
         }
     });
 
-    // it("new stakeholder should have increased index", async () => {
-    //     let stake_amount = 100;
-    //     stakeID = await devToken.stake(stake_amount, { from: accounts[1] });
-    //     // Assert on the emittedevent using truffleassert
-    //     // This will capture the event and inside the event callback we can use assert on the values returned
-    //     truffleAssert.eventEmitted(
-    //         stakeID,
-    //         "Staked",
-    //         (ev) => {
-    //             // In here we can do our assertion on the ev variable (its the event and will contain the values we emitted)
-    //             assert.equal(ev.amount, stake_amount, "Stake amount in event was not correct");
-    //             assert.equal(ev.index, 2, "Stake index was not correct");
-    //             return true;
-    //         },
-    //         "Stake event should have triggered");
-    // })
+    it("new stakeholder should have increased index", async () => {
+        let stake_amount = 100;
+        stakeID = await devToken.stake(stake_amount, { from: accounts[1] });
+        // Assert on the emittedevent using truffleassert
+        // This will capture the event and inside the event callback we can use assert on the values returned
+        truffleAssert.eventEmitted(
+            stakeID,
+            "Staked",
+            (ev) => {
+                // In here we can do our assertion on the ev variable (its the event and will contain the values we emitted)
+                assert.equal(ev.amount, stake_amount, "Stake amount in event was not correct");
+                assert.equal(ev.index, 2, "Stake index was not correct");
+                return true;
+            },
+            "Stake event should have triggered");
+    })
 
     it("withdraw stakes", async() => {
         devToken = await DevToken.deployed();
+        let stake_amount = new BN('1000', 10);
 
         let owner = accounts[0];
         // Try withdrawing 50 from first stake
-        await helper.advanceTimeAndBlock(3600*24*365);
 
         //await devToken.withdrawStakes( {from:owner});
         // Grab a new summary to see if the total amount has changed
@@ -95,50 +119,58 @@ contract("DevToken", async accounts => {
 
         console.log(summary);
 
-        assert.equal(summary.total_amount, stake_amount, "The total staking amount should be 150");
+        assert.equal(summary.total_amount, stake_amount*2, "The total staking amount should be 2000");
     });
 
-    it("remove stake if empty", async() => {
+    it("calculate rewards", async() => {
         devToken = await DevToken.deployed();
 
         let owner = accounts[0];
-        // Try withdrawing 50 from first stake AGAIN, this should empty the first stake
+
         await helper.advanceTimeAndBlock(3600*24*365);
 
-        await devToken.withdrawStakes({from:owner});
-        // Grab a new summary to see if the total amount has changed
+        // Owner has 1 stake at this time, its the index 1 with 100 Tokens staked
+        // So lets fast forward time by 20 Hours and see if we gain 2% reward
         let summary = await devToken.hasStake(owner);
-        console.log(summary);
 
-        assert.equal(summary.stakes[0].user, "0x0000000000000000000000000000000000000000", "Failed to remove stake when it was empty");
+
+        let stake = summary.stakes[0];
+
+        assert.equal(stake.claimable, 111, "Reward should be 2 after staking for twenty hours with 100")
     });
 
-    // it("calculate rewards", async() => {
-    //     devToken = await DevToken.deployed();
-    //
-    //     let owner = accounts[0];
-    //
-    //     // Owner has 1 stake at this time, its the index 1 with 100 Tokens staked
-    //     // So lets fast forward time by 20 Hours and see if we gain 2% reward
-    //     let summary = await devToken.hasStake(owner);
-    //
-    //
-    //     let stake = summary.stakes[0];
-    //
-    //     assert.equal(stake.claimable, 11, "Reward should be 2 after staking for twenty hours with 100")
-    //     // Make a new Stake for 1000, fast forward 20 hours again, and make sure total stake reward is 24 (20+4)
-    //     // Remember that the first 100 has been staked for 40 hours now, so its 4 in rewards.
-    //     await devToken.stake(200000000000000000000n, {from: owner});
-    //     await helper.advanceTimeAndBlock(3600*24*98);
-    //
-    //     summary = await devToken.hasStake(owner);
-    //
-    //     stake = summary.stakes[1];
-    //     let newstake = summary.stakes[2];
-    //
-    //     // assert.equal(stake.claimable, (22), "Reward should be 4 after staking for 40 hours")
-    //     assert.equal(newstake.claimable, (5966514459665144596 ), "Reward should be 20 after staking 20 hours");
-    // });
+    it("shoould throw error when user has no stakes for withdrawal", async() => {
+        devToken = await DevToken.deployed();
+
+        let owner = accounts[0];
+        let balance = await devToken.balanceOf(owner)
+        console.log("Balance before stake: " + balance.toString());
+
+        await devToken.hasStake(owner);
+
+        let expected = new BN(balance).add(new BN(2222,10));
+
+
+        await devToken.withdrawStakes({from:owner});
+        let after_balance = await devToken.balanceOf(owner);
+        console.log("Balance after stake: " + after_balance.toString());
+
+
+        assert.equal(after_balance.toString(), expected.toString(), "Failed to withdraw the stake correctly")
+
+
+        // Grab a new summary to see if the total amount has changed
+        try{
+            await devToken.hasStake(owner);
+            assert.fail(error);
+
+        }catch(error){
+            assert.equal(error.message, "VM Exception while processing transaction: revert No stakes found for this staker");
+        }
+        // console.log(summary);
+        //
+        // assert.equal(summary.stakes[0].user, "0x0000000000000000000000000000000000000000", "Failed to remove stake when it was empty");
+    });
     //
     // it("reward stakes", async() => {
     //     devToken = await DevToken.deployed();

@@ -8,10 +8,9 @@ contract DevToken is ERC20, Ownable {
 
     uint256 public initialSupply = 100000000;
 
-    constructor(uint256 _stakeStartDate) ERC20("DevToken", "DVTK") {
+    constructor() ERC20("DevToken", "DVTK") {
         _mint(msg.sender, initialSupply * 10 ** decimals());
         stakeholders.push();
-        setStakeStartDate(_stakeStartDate);
     }
 
     struct StakingSummary {
@@ -31,18 +30,15 @@ contract DevToken is ERC20, Ownable {
         Stake[] address_stakes;
     }
 
-    uint256 public stakeStartDate;
+    uint256 public stakeStartDate = 0;
     Stakeholder[] internal stakeholders;
 
     mapping(address => uint256) internal stakes;
 
     event Staked(address indexed user, uint256 amount, uint256 index, uint256 timestamp);
-    event CalculatedReward( uint256 startDate);
-    event CalculatedReward1( uint256 startDate, uint256 endDate);
-    event CalculatedReward2( uint256 startDate, uint256 endDate, uint256 daysStaked);
-    event CalculatedReward3( uint256 startDate, uint256 endDate, uint256 daysStaked, uint256 reward);
 
     function setStakeStartDate(uint256 _timestamp) public onlyOwner {
+        require(block.timestamp < _timestamp, "Stake start date must be in the future");
         stakeStartDate = _timestamp;
     }
 
@@ -69,6 +65,7 @@ contract DevToken is ERC20, Ownable {
     }
 
     function stake(uint256 _amount) public {
+        require(stakeStartDate > 0, "Staking has not started yet");
         require(stakeStartDate < block.timestamp, "Staking has not started yet");
         require(block.timestamp < (stakeStartDate + 365 days), "Staking has ended");
         require(_amount <= balanceOf(msg.sender), "Cannot stake more than you own");
@@ -113,13 +110,9 @@ contract DevToken is ERC20, Ownable {
 
     function calculateStakeReward(Stake memory _current_stake) internal view returns (uint256) {
         uint256 startDate = _current_stake.since;
-        //emit CalculatedReward(startDate);
         uint256 endDate = stakeStartDate + 365 days;
-        //emit CalculatedReward1(startDate, endDate);
         uint256 daysStaked = (endDate - startDate + 86399) / 86400;
-        //emit CalculatedReward2(startDate, endDate, daysStaked);
         uint256 reward = (_current_stake.amount * daysStaked * 11111111) / (365 * 10 ** 8);
-        //emit CalculatedReward3(startDate, endDate, daysStaked, reward);
         return reward;
     }
 
