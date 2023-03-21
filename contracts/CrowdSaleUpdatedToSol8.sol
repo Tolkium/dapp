@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
 
@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title Crowdsale
- * @dev UPDATED TO SOLIDITY 0.8.1 - Crowdsale is a base contract for managing a token crowdsale,
+ * @dev OpenZeppelin Crowdsale UPDATED TO SOLIDITY 0.8.1 - Crowdsale is a base contract for managing a token crowdsale,
  * allowing investors to purchase tokens with ether. This contract implements
  * such functionality in its most fundamental form and can be extended to provide additional
  * functionality and/or custom behavior.

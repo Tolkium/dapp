@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -9,13 +9,12 @@ contract DevToken is ERC20, Ownable {
     // Initial supply of the token is set to 100,000,000.
     uint256 public initialSupply = 100000000;
     // Constructor for the DevToken contract.
-    constructor() ERC20("DevToken", "DVTK") {
+    constructor() ERC20("BetaToken", "BT") {
         // The contract creator gets the initial supply of tokens.
         _mint(msg.sender, initialSupply * 10 ** decimals()); 
         // Initialize the stakeholders array with an empty stakeholder to prevent a user with index 0 being considered as non-staker.
         stakeholders.push();
     }
-
 
     // Structure to store the summary of all stakes for a user.
     struct StakingSummary {
@@ -139,6 +138,8 @@ contract DevToken is ERC20, Ownable {
     * Mints the total tokens (stakes and rewards) to the user's balance and clears their staking data.
     */
     function withdrawStakes() public {
+        // Check if the staking start date is not zero, ensuring that staking has started
+        require(stakeStartDate != 0, "Withdrawing is not allowed yet");
         // Ensure that the current block timestamp is greater than the sum of the staking start date and the staking duration (365 days)
         require(stakeStartDate + (365 days) < block.timestamp, "Withdrawing is not allowed yet");
         // Calculate the total tokens to be minted (stakes and rewards) by calling the internal _withdrawStakes function
@@ -154,6 +155,8 @@ contract DevToken is ERC20, Ownable {
     function _withdrawStakes() internal returns (uint256){
         // Get the index of the staker in the stakeholders array.
         uint256 user_index = stakes[msg.sender];
+        // Check if the user has any stakes
+        require(stakeholders[user_index].address_stakes.length > 0, "Withdrawing not possible. --Reason: no stakes");
         // Initialize a variable to store the total tokens to be withdrawn.
         uint256 totalTokens = 0;
         // Loop through all the stakes of the staker.
