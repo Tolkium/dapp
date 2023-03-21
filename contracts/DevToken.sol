@@ -4,11 +4,19 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// This contract creates a new token called DevToken, which inherits from ERC20 and Ownable contracts.
+/**
+ * @title DevTokenCrowdsale
+ * @dev A simple crowdsale contract that allows users to purchase tokens using Ether.
+ * It inherits from Crowdsale, Pausable, and Ownable contracts. The contract creator can
+ * pause and unpause the crowdsale and withdraw unsold tokens after the crowdsale has ended.
+ */
 contract DevToken is ERC20, Ownable {
     // Initial supply of the token is set to 100,000,000.
     uint256 public initialSupply = 100000000;
-    // Constructor for the DevToken contract.
+    
+    /**
+    @dev Constructor for the DevToken contract.
+    */
     constructor() ERC20("BetaToken", "BT") {
         // The contract creator gets the initial supply of tokens.
         _mint(msg.sender, initialSupply * 10 ** decimals()); 
