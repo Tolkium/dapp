@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title DevTokenCrowdsale
- * @dev A simple crowdsale contract that allows users to purchase tokens using Ether.
- * It inherits from Crowdsale, Pausable, and Ownable contracts. The contract creator can
- * pause and unpause the crowdsale and withdraw unsold tokens after the crowdsale has ended.
+ * @title DevToken
+ * @dev A simple staking contract that allows users to stake tokens and earn rewards over time.
+ * Users can stake a specified amount of tokens during the staking period and withdraw their stakes
+ * along with the calculated rewards after the staking period has ended.
  */
 contract DevToken is ERC20, Ownable {
     // Initial supply of the token is set to 100,000,000.
