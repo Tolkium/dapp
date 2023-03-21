@@ -11,14 +11,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Crowdsale contract that inherits from Crowdsale, Pausable, and Ownable.
  * It allows pausing and resuming the crowdsale and withdrawal of unsold tokens by the contract owner.
  */
-contract SimpleCrowdsale is Crowdsale, Pausable, Ownable {
+contract DevTokenCrowdsale is Crowdsale, Pausable, Ownable {
     // Define events
     event CrowdsalePaused();
     event CrowdsaleUnpaused();
     event UnsoldTokensWithdrawn(address indexed owner, uint256 amount);
 
     /**
-     * @dev Constructor for the SimpleCrowdsale contract.
+     * @dev Constructor for the DevTokenCrowdsale contract.
      * @param rate The conversion rate from wei to tokens.
      * @param wallet The address where funds collected will be forwarded.
      * @param token The address of the token to be sold.
